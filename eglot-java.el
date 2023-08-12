@@ -93,13 +93,7 @@
   :type 'string
   :group 'eglot-java)
 
-(defcustom eglot-java-home-dir
-  nil
-  "Directory to use instead of JAVA_HOME."
-  :type 'directory
-  :group 'eglot-java)
-
-(defcustom eglot-java-bin
+(defcustom eglot-server-java-bin
   nil
   "Path to java executable."
   :type 'file
@@ -148,6 +142,18 @@
   :type 'string
   :group 'eglot-java)
 
+(defcustom eglot-java-gradle-version
+  nil
+  "Gradle version to use."
+  :type 'string
+  :group 'eglot-java)
+
+(defcustom eglot-java-gradle-wrapper-enable
+  nil
+  "Enable Gradle wrapper?"
+  :type 'boolean
+  :group 'eglot-java)
+
 (defconst eglot-java-build-filename-maven  "pom.xml"      "Maven build file name.")
 (defconst eglot-java-build-filename-gradle "build.gradle" "Gradle build file name.")
 
@@ -187,7 +193,9 @@
                                                          (file-chase-links (executable-find "javac"))))))))
                                       `(:settings (:java (:home ,home)
                                                          :import (:gradle (:enabled t)
-                                                                          :wrapper (:enabled t))))
+                                                                          ,@(when eglot-java-gradle-version
+                                                                              (:version eglot-java-gradle-version))
+                                                                          :wrapper (:enabled ,(or eglot-java-gradle-wrapper-enable :json-false)))))
                                     (ignore (eglot--warn "JAVA_HOME env var not set")))))
 
 (defun eglot-java--eclipse-jdt-contact (interactive)
@@ -245,7 +253,7 @@ If INTERACTIVE, prompt user for details."
       (cons 'eglot-java-eclipse-jdt
             (nconc
              (list
-              (or eglot-java-bin (executable-find "java"))
+              (or eglot-server-java-bin (executable-find "java"))
               "-Declipse.application=org.eclipse.jdt.ls.core.id1"
               "-Dosgi.bundles.defaultStartLevel=4"
               "-Declipse.product=org.eclipse.jdt.ls.core.product")
