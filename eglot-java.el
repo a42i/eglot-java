@@ -93,12 +93,30 @@
   :type 'string
   :group 'eglot-java)
 
+(defcustom eglot-java-home-dir
+  nil
+  "Directory to use instead of JAVA_HOME."
+  :type 'directory
+  :group 'eglot-java)
+
+(defcustom eglot-java-bin
+  nil
+  "Path to java executable."
+  :type 'file
+  :group 'eglot-java)
+
 (defcustom eglot-java-server-install-dir
   (concat user-emacs-directory "share/eclipse.jdt.ls")
   "Location of the Eclipse Java language server installation."
   :type 'directory
   :group 'eglot-java
   :link '(url-link :tag "Github" "https://github.com/yveszoundi/eglot-java"))
+
+(defcustom eglot-java-server-cache-dir
+  (concat user-emacs-directory "eglot-java-eclipse-jdt-cache")
+  "Location of the Eclipse Java language server cache."
+  :type 'directory
+  :group 'eglot-java)
 
 (defcustom eglot-java-junit-platform-console-standalone-jar
   (concat user-emacs-directory "share/junit-platform-console-standalone/junit-platform-console-standalone.jar")
@@ -160,7 +178,8 @@
                                                       (file-expand-wildcards (concat root "*/.project")))))))
                                     :test #'string=)]
 
-                                ,@(if-let ((home (or (getenv "JAVA_HOME")
+                                ,@(if-let ((home (or eglot-java-home-dir
+                                                     (getenv "JAVA_HOME")
                                                      (ignore-errors
                                                        (expand-file-name
                                                         ".."
@@ -208,8 +227,9 @@ If INTERACTIVE, prompt user for details."
               (t "config_linux"))))
            (workspace
             (expand-file-name (md5 (project-root (eglot--current-project)))
-                              (locate-user-emacs-file
-                               "eglot-java-eclipse-jdt-cache"))))
+                              (or eglot-java-server-cache-dir
+                                  (locate-user-emacs-file
+                                   "eglot-java-eclipse-jdt-cache")))))
       (unless jar
         (setq jar
               (cl-find-if #'is-the-jar
@@ -225,7 +245,7 @@ If INTERACTIVE, prompt user for details."
       (cons 'eglot-java-eclipse-jdt
             (nconc
              (list
-              (executable-find "java")
+              (or eglot-java-bin (executable-find "java"))
               "-Declipse.application=org.eclipse.jdt.ls.core.id1"
               "-Dosgi.bundles.defaultStartLevel=4"
               "-Declipse.product=org.eclipse.jdt.ls.core.product")
